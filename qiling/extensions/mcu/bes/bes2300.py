@@ -10,14 +10,54 @@ bes2300 = {
         "type": "memory"
     },
     "RAM": {
-        "base":0x200a0000,
-        "size":0x20000,
+        "base":0x20000000,
+        "size":0xC0000,
+        "type": "memory"
+    },
+    "RAMX": {
+        "base":0x00200000,
+        "size":0xC0000,
         "type": "memory"
     },
     "FLASH": {
         "base": 0x3C000000,
         "size": 0x100000,
         "type": "memory"
+    },
+    "FLASHX": {
+        "base": 0x0C000000,
+        "size": 0x100000,
+        "type": "memory"
+    },
+    "CORE": {
+        "base": 0xe0000000,
+        "size": 0x100000,
+        "type": "mmio"
+    },
+    "CACHE": {
+        "base": 0x7ffe000,
+        "size": 0x1000,
+        "type": "mmio"
+    },
+    "SYSTICK": {
+        "base": 0xe000e010,
+        "struct": "CortexM4SysTick",
+        "type": "core peripheral"
+    },
+    "NVIC": {
+        "base": 0xe000e100,
+        "struct": "CortexM4Nvic",
+        "type": "core peripheral"
+    },
+    "SCB": {
+        "base": 0xe000ed00,
+        "struct": "CortexM4Scb",
+        "type": "core peripheral"
+    },
+    "PERIP": {
+        "base": 0x40000000,
+        "size": 0x100000,
+        "type": "mmio"
     },
     "CMU": {
         "struct": "BES2300Cmu",
