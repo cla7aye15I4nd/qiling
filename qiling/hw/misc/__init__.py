@@ -15,3 +15,5 @@ from .stm32f4xx_flash import STM32F4xxFlash
 from .stm32f4xx_dbg import STM32F4xxDbgmcu
 from .gd32vf1xx_rcu import GD32VF1xxRcu
 from .bes2300_cache import BES2300Cache
+from .bes2300_cmu import BES2300Cmu
+from .bes2300_aoncmu import BES2300Aoncmu
