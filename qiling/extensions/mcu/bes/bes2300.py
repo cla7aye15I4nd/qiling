@@ -5,18 +5,8 @@
 
 bes2300 = {
     "ROM": {
-        "base":0x0,
-        "size":0xc000,
-        "type": "memory"
-    },
-    "RAM": {
-        "base":0x20000000,
-        "size":0xC0000,
-        "type": "memory"
-    },
-    "RAMX": {
-        "base":0x00200000,
-        "size":0xC0000,
+        "base":0x00000000,
+        "size":0x0000C000,
         "type": "memory"
     },
     "FLASH": {
@@ -29,6 +19,16 @@ bes2300 = {
         "size": 0x100000,
         "type": "memory"
     },
+    "RAM": {
+        "base":0x20000000,
+        "size":0xC0000,
+        "type": "memory"
+    },
+    "RAMX": {
+        "base":0x00200000,
+        "size":0xC0000,
+        "type": "memory"
+    },
     "CORE": {
         "base": 0xe0000000,
         "size": 0x100000,
@@ -38,6 +38,11 @@ bes2300 = {
         "base": 0x7ffe000,
         "size": 0x1000,
         "type": "mmio"
+    },
+    "ICACHE": {
+        "base": 0x7ffe000,
+        "struct": "BES2300Cache",
+        "type": "core peripheral"
     },
     "SYSTICK": {
         "base": 0xe000e010,
