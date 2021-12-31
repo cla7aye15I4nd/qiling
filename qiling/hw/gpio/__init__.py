@@ -5,3 +5,4 @@
 
 from .stm32f4xx_gpio import STM32F4xxGpio
 from .gd32vf1xx_gpio import GD32VF1xxGpio
+from .bes2300_iomux import BES2300Iomux
