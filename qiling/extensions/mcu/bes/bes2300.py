@@ -149,6 +149,11 @@ bes2300 = {
         "base":0x40086000,
         "type": "peripheral"
     },
+    "AONCMU": {
+        "struct": "BES2300Aoncmu",
+        "base":0x40080000,
+        "type": "peripheral"
+    },
     "GPIO": {
         "struct": "BES2300Gpio",
         "base":0x40081000,
@@ -157,6 +162,11 @@ bes2300 = {
     "PWM": {
         "struct": "BES2300Pwm",
         "base":0x40083000,
+        "type": "peripheral"
+    },
+    "PSC": {
+        "struct": "BES2300Psc",
+        "base":0x40085000,
         "type": "peripheral"
     },
     "TIMER0": {
