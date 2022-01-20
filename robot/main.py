@@ -2,8 +2,7 @@ import os
 import sys
 import lief
 
-# import angr
-# import claripy
+import angr
 
 sys.path.append('..')
 from qiling.core import Qiling
@@ -14,6 +13,7 @@ from qiling.extensions.mcu.stm32f4 import stm32f407
 ## environment setting
 firmware = "firmware/sdio-demo.elf"
 log_file = 'run.log'
+
 
 ## Clear Log File
 os.path.exists(log_file) and os.remove(log_file)
@@ -31,16 +31,19 @@ ql.hw.create('gpiod')
 ql.hw.create('usart1')
 ql.hw.create('sdio').watch()
 
+
 ## Create lief Entity
 binary = lief.parse(firmware)
+
 
 ## Function trace
 trace = []
 
+
 def need_monitor(name):
     return 'SD' in name
 
-def create_entry_callback(ql, function, trace):
+def create_entry_callback(ql, function):
     entry_address = function.address & 0xfffffffe
 
     def entry_cb(ql, trace):
@@ -56,7 +59,7 @@ def create_entry_callback(ql, function, trace):
     ql.hook_address(entry_cb, entry_address, user_data=trace)
     ql.log.debug(f'Hook Entry: ({hex(entry_address)}) {function}')
 
-def create_exit_callback(ql, trace):
+def create_exit_callback(ql):
     def exit_cb(ql, address, size, trace):
         if ql.arch.is_handler_mode():
             return
@@ -87,9 +90,9 @@ def print_trace():
     for func in trace:
         ql.log.info(func)
 
-create_exit_callback(ql, trace)
+create_exit_callback(ql)
 for function in binary.functions:
-    create_entry_callback(ql, function, trace)
+    create_entry_callback(ql, function)
 
 ql.hw.systick.ratio = 0x100
 ql.run(count=25000)
