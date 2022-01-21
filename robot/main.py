@@ -2,9 +2,9 @@ import os
 import sys
 import lief
 
-import angr
-
 sys.path.append('..')
+
+# Qiling setting
 from qiling.core import Qiling
 from qiling.const import QL_VERBOSE
 from qiling.extensions.mcu.stm32f4 import stm32f407
@@ -40,61 +40,61 @@ binary = lief.parse(firmware)
 trace = []
 
 
-def need_monitor(name):
+def nice(name):
     return 'SD' in name
 
-def create_entry_callback(ql, function):
-    entry_address = function.address & 0xfffffffe
-
-    def entry_cb(ql, trace):
-        if ql.arch.is_handler_mode():
-            return
-
-        def logger(name):
-            return (ql.log.info) if need_monitor(name) else (ql.log.debug)
-
-        trace.append(function)
-        logger(function.name)(f'Enter {function.name}[{hex(entry_address)}]')
-
-    ql.hook_address(entry_cb, entry_address, user_data=trace)
-    ql.log.debug(f'Hook Entry: ({hex(entry_address)}) {function}')
-
-def create_exit_callback(ql):
-    def exit_cb(ql, address, size, trace):
+def create_function_callback(ql):
+    def function_cb(ql, address, size, trace):
         if ql.arch.is_handler_mode():
             return
         
         def logger(name):
-            return (ql.log.info) if need_monitor(name) else (ql.log.debug)
+            return (ql.log.info) if nice(name) else (ql.log.debug)
 
-        pop, count = 0, 0
+        count = 0
         for function in trace[::-1]:
             lo = function.address & 0xfffffffe
             up = lo + function.size
 
             if lo <= address < up:
-                pop = 1
+                for _ in range(count):
+                    function = trace.pop(-1)
+                    logger(function.name)(f'Exit {function.name} = {hex(ql.reg.r0)}')
+                
                 break
 
             count += 1
 
-        while pop and count > 0:
-            count -= 1
-            function = trace.pop(-1)
-            logger(function.name)(f'Exit {function.name} = {hex(ql.reg.r0)}')
+        for function in binary.functions:
+            entry_address = function.address & 0xfffffffe
 
-    ql.hook_code(exit_cb, user_data=trace)
+            if entry_address == address:
+                trace.append(function)
+                logger(function.name)(f'Enter {function.name}[{hex(entry_address)}]')
+
+                if nice(function.name):
+                    setup_angr()
+
+                break
+
+    ql.hook_code(function_cb, user_data=trace)
 
 def print_trace():
     ql.log.info('======= Function Trace ======')
     for func in trace:
         ql.log.info(func)
 
-create_exit_callback(ql)
-for function in binary.functions:
-    create_entry_callback(ql, function)
 
-ql.hw.systick.ratio = 0x100
-ql.run(count=25000)
+# Angr setting
 
-print_trace()
+def setup_angr():
+    pass
+
+
+if __name__ == '__main__':
+    create_function_callback(ql)
+
+    ql.hw.systick.ratio = 0x100
+    ql.run(count=25000)
+
+    print_trace()
