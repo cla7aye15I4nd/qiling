@@ -7,6 +7,7 @@ import ctypes
 
 from qiling.core import Qiling
 from qiling.hw.peripheral import QlPeripheral
+from qiling.hw.const.stm32f4xx_sdio import SDIO_STA, SDIO_CMD
 
 
 class STM32F4xxSdio(QlPeripheral):
@@ -71,5 +72,12 @@ class STM32F4xxSdio(QlPeripheral):
     
     @QlPeripheral.monitor()
     def write(self, offset: int, size: int, value: int):
+        if offset == self.struct.CMD.offset:
+            if value & SDIO_CMD.CPSMEN:
+                if value & SDIO_CMD.WAITRESP in [0b00000000, 0b10000000]:
+                    self.sdio.STA |= SDIO_STA.CMDSENT
+                else:
+                    self.sdio.STA |= SDIO_STA.CMDREND
+
         data = (value).to_bytes(size, 'little')
         ctypes.memmove(ctypes.addressof(self.sdio) + offset, data, size)
