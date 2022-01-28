@@ -53,7 +53,7 @@ def create_function_callback(ql):
 
         count = 0
         for function in trace[::-1]:
-            lo = function.address & 0xfffffffe
+            lo = function.address & (~1)
             up = lo + function.size
 
             if lo <= address < up:
@@ -66,14 +66,14 @@ def create_function_callback(ql):
             count += 1
 
         for function in binary.functions:
-            entry_address = function.address & 0xfffffffe
+            entry_address = function.address & (~1)
 
             if entry_address == address:
                 trace.append(function)
                 logger(function.name)(f'Enter {function.name}[{hex(entry_address)}]')
 
                 if nice(function.name):
-                    setup_angr()
+                    setup_angr(function)
 
                 break
 
@@ -87,7 +87,11 @@ def print_trace():
 
 # Angr setting
 
-def setup_angr():
+import angr
+
+proj = angr.Project(firmware)
+
+def setup_angr(function):
     pass
 
 
