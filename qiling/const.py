@@ -34,6 +34,7 @@ class QL_OS(IntEnum):
     QNX = 208
     MCU = 209
     BLOB = 210
+    KERNEL = 211
 
 class QL_VERBOSE(IntEnum):
     DISABLED = -1 # turn off all the output
@@ -64,7 +65,7 @@ QL_ARCH_64BIT  = (QL_ARCH.ARM64, QL_ARCH.X8664, QL_ARCH.RISCV64)
 QL_OS_NONPID            = (QL_OS.DOS, QL_OS.UEFI)
 QL_OS_POSIX             = (QL_OS.LINUX, QL_OS.FREEBSD, QL_OS.MACOS, QL_OS.QNX)
 
-QL_OS_BAREMETAL   = (QL_OS.MCU,)
+QL_OS_BAREMETAL   = (QL_OS.MCU, QL_OS.KERNEL)
 QL_OS_INTERPRETER = (QL_OS.EVM,)
 
 QL_HOOK_BLOCK = 0b0001
@@ -91,7 +92,8 @@ loader_map = {
     QL_OS.DOS     : "DOS",
     QL_OS.EVM     : "EVM",
     QL_OS.MCU     : "MCU",
-    QL_OS.BLOB    : "BLOB"
+    QL_OS.BLOB    : "BLOB",
+    QL_OS.KERNEL  : "KERNEL",
 }
 
 arch_os_map = {
