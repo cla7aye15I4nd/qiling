@@ -198,7 +198,7 @@ class Qiling(QlCoreHooks, QlCoreStructs):
         if not self.interpreter:
             self._mem = component_setup("os", "memory", self)
             self._reg = component_setup("arch", "register", self)
-              
+            self._hw  = component_setup("hw", "hw", self)
 
         self._arch = arch_setup(self.archtype, self)
         

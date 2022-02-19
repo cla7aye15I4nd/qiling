@@ -61,8 +61,6 @@ class QlLoaderMCU(QlLoader):
         self.entry_point = 0
         self.load_address = 0
         self.filetype = self.guess_filetype()
-        
-        self.ql._hw = component_setup("hw", "hw", self.ql)
 
         if self.filetype == 'elf':
             with open(self.ql.path, 'rb') as infile:
