@@ -31,6 +31,13 @@ def make_state(proj, address):
         }
     )
 
+def hook_address(proj, address):
+    def put_symbol(state):
+        sr = claripy.BVS(f'SR#{hex(address)[2:]}', 32)
+        state.memory.store(0x400e0668, sr)
+    
+    proj.hook(address, put_symbol)
+
 if __name__ == '__main__':
     entry, target = 0x805c5, 0x805d9
     path = "../examples/rootfs/mcu/sam3x8e/serial.ino.hex"
@@ -40,21 +47,35 @@ if __name__ == '__main__':
     
     proj = make_angr(path)
     state = make_state(proj, entry)
-    
-    sr = claripy.BVS('SR', 32)
-    state.memory.store(0x400e0668, sr)
 
-    while True:
-        succ = state.step()
-        if len(succ.successors) > 1:
-            break
-        state = succ.successors[0]
+    hook_address(proj, 0x805e2)
+    hook_address(proj, 0x805ea)
+    hook_address(proj, 0x805fe)
+    hook_address(proj, 0x8060a)
+    hook_address(proj, 0x80616)
+    hook_address(proj, 0x80622)
     
-    for state in succ.successors:
-        print(f'{state}:')
+    target = 0x8062f
+    simgr = proj.factory.simgr(state)
+    simgr.explore(find=target)
+
+    if simgr.found:
+        state = simgr.found[0]
         state.solver.simplify()
         for constraint in state.solver.constraints:
             print(f'\t{constraint}')
+
+    # while True:
+    #     succ = state.step()
+    #     if len(succ.successors) > 1:
+    #         break
+    #     state = succ.successors[0]
+    
+    # for state in succ.successors:
+    #     print(f'{state}:')
+    #     state.solver.simplify()
+    #     for constraint in state.solver.constraints:
+    #         print(f'\t{constraint}')
 
 # [=]     000805d2 [[FLASH]              + 0x0005d2]  1a 6a                         ldr                  r2, [r3, #0x20]
 # [=]     [PMC] [0x805d2] [R] CKGR_MOR = 0x0
