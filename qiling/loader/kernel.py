@@ -19,9 +19,9 @@ class QlLoaderKERNEL(QlLoader):
         return self.elf.entrypoint
 
     def run(self):
+        self.ql.reg.pc = self.entry_point
+
         for segment in self.elf.segments:
             if segment.type == lief.ELF.SEGMENT_TYPES.LOAD:
-                self.ql.mem.map(segment.virtual_address, segment.virtual_size)            
-            
-                for section in segment.sections:
-                    self.ql.mem.write(section.virtual_address, bytes(section.content))
+                self.ql.mem.map(segment.virtual_address, 0x80000000)            
+                self.ql.mem.write(segment.virtual_address, bytes(segment.content))
