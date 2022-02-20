@@ -4,6 +4,7 @@
 #
 
 from .clint import Clint
+from .plic import Plic
 from .cm3_nvic import CortexM3Nvic
 from .cm4_nvic import CortexM4Nvic
 from .stm32f1xx_exti import STM32F1xxExti
