@@ -19,8 +19,11 @@ ql = Qiling(
     ostype='kernel', verbose=QL_VERBOSE.DEFAULT, 
 )
 
-ql.mem.map(0x2000000 ,  0x10000)
-ql.mem.map(0x0c000000, 0x240000)
+ql.hw.setup_mmio(0x2000000, 0x10000, info="[CLINT]")
+ql.hw.create('clint', 'Clint', 0x2000000).watch()
+
+ql.hw.setup_mmio(0xc000000, 0x240000, info="[PLIC]")
+ql.hw.create('plic', 'Plic', 0xc000000).watch()
 
 ql.hw.setup_mmio(0x10001000, 0x1000, info="[VIRTIO]")
 ql.hw.create('virtio0', 'VirtIO', 0x10001000)
@@ -31,9 +34,8 @@ ql.hw.create('uart0', 'Serial', 0x10000000)
 ql.mem.map(0x4000000000-0x100000, 0x100000)
 
 try:
-    ql.run(count=10**8, end=0x80000070)
+    ql.run(count=10**9)
 except:
     import ipdb; ipdb.set_trace()
 
-print(hex(ql.reg.stvec))
-print(hex(ql.reg.mtvec))
+print(ql.hw.uart0.recv().decode())
