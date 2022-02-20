@@ -11,7 +11,7 @@ class QlOsKernel(QlOs):
         super().__init__(ql)
 
     def run(self):
-        if self.ql.exit_point:
-            self.exit_point = self.ql.exit_point
+        count = self.ql.count
+        end = self.ql.exit_point if self.ql.exit_point is not None else -1
         
-        self.ql.emu_start(self.ql.arch.get_pc(), self.exit_point, count=self.ql.count)
+        self.ql.emu_start(self.ql.arch.get_pc(), end, count=count)
