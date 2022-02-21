@@ -534,6 +534,7 @@ class Qiling(QlCoreHooks, QlCoreStructs):
 
             Type: int
             Values:
+              - -1 : logging.NOTSET, turn off all the output.
               - 0  : logging.WARNING, almost no additional logs except the program output.
               - >=1: logging.INFO, the default logging level.
               - >=4: logging.DEBUG.
@@ -548,8 +549,7 @@ class Qiling(QlCoreHooks, QlCoreStructs):
     def verbose(self, v):
         self._verbose = v
         self.log.setLevel(ql_resolve_logger_level(self._verbose))
-        if self.interpreter:
-            self.arch.utils.setup_output()
+        self.arch.utils.setup_output()
 
     @property
     def patch_bin(self) -> list:
@@ -702,7 +702,7 @@ class Qiling(QlCoreHooks, QlCoreStructs):
 
     # Emulate the binary from begin until @end, with timeout in @timeout and
     # number of emulated instructions in @count
-    def run(self, begin=None, end=None, timeout=0, count=0, code = None):
+    def run(self, begin=None, end=None, timeout=0, count=0, code=None):
         # replace the original entry point, exit point, timeout and count
         self.entry_point = begin
         self.exit_point = end
@@ -716,11 +716,6 @@ class Qiling(QlCoreHooks, QlCoreStructs):
         if self.interpreter:
             return self.arch.run(code)
 
-        elif self.baremetal:
-            self.__enable_bin_patch()
-            if self.count <= 0:
-                self.count = -1
-            self.arch.run(count=self.count, end=self.exit_point)        
         else:
             self.write_exit_trap()
             # patch binary
@@ -869,7 +864,7 @@ class Qiling(QlCoreHooks, QlCoreStructs):
             self.os.thread_management.stop() 
 
         elif self.baremetal:
-            self.arch.stop()
+            self.os.stop()
 
         else:
             self.uc.emu_stop()    

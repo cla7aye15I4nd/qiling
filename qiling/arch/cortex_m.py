@@ -77,29 +77,9 @@ class QlArchCORTEX_M(QlArchARM):
     def create_assembler(self) -> Ks:
         return Ks(KS_ARCH_ARM, KS_MODE_ARM + KS_MODE_THUMB)
     
-    def check_thumb(self):
-        return UC_MODE_THUMB
-
-    def step(self):
-        self.ql.emu_start(self.get_pc(), 0, count=1)
-        self.ql.hw.step()
-
-    def stop(self):
-        self.ql.emu_stop()
-        self.runable = False
-
-    def run(self, count=-1, end=None):
-        self.runable = True
-
-        if type(end) is int:
-            end |= 1        
-        
-        while self.runable and count != 0:
-            if self.get_pc() == end:
-                break
-
-            self.step()
-            count -= 1    
+    @property
+    def thumb(self):
+        return 1
 
     def is_handler_mode(self):
         return self.ql.reg.read('ipsr') > 1
@@ -112,7 +92,7 @@ class QlArchCORTEX_M(QlArchARM):
         self.ql.reg.write('msp', self.ql.mem.read_ptr(0x0))
         self.ql.reg.write('pc' , self.ql.mem.read_ptr(0x4))
 
-    def soft_interrupt_handler(self, ql, intno):
+    def unicorn_exception_handler(self, ql, intno):
         forward_mapper = {
             EXCP.UDEF           : IRQ.HARD_FAULT,    # undefined instruction
             EXCP.SWI            : IRQ.SVCALL,        # software interrupt
@@ -143,7 +123,7 @@ class QlArchCORTEX_M(QlArchARM):
         except IndexError:
             raise QlErrorNotImplemented(f'Unhandled interrupt number ({intno})')
 
-    def hard_interrupt_handler(self, ql, intno):
+    def interrupt_handler(self, ql, intno):
         basepri = self.ql.reg.read('basepri') & 0xf0
         if basepri and basepri <= ql.hw.nvic.get_priority(intno):
             return
