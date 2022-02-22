@@ -4,7 +4,7 @@ import angr
 sys.path.append('..')
 from qiling.core import Qiling
 from context import StateWrapper
-
+from symbol import SymbolManager
 
 class Skye:
     def __init__(self, path, env):
@@ -12,8 +12,12 @@ class Skye:
         self.path = path
         
         self.emulator = self.create_emulator()
+        self.emulator.hw.load_all()
+
         self.analyzer = self.create_analyzer()
         self.disassembler = self.emulator.disassembler
+
+        self.symbol_manager = SymbolManager()
 
     def create_emulator(self):
         return Qiling(
@@ -36,14 +40,20 @@ class Skye:
         ))
 
     def search(self, state, end):
+        self.history.append(state.addr)
         if state.addr == end:
-            return
+            print('[END]')
+            self.found.append(state)
 
-        if len(succs := state.step()) > 1:
-            return
+        elif len(succs := state.step()) > 1:
+            for succ in succs:
+                if succ.addr not in self.history:
+                    self.search(succ, end)
 
-        for succ in succs:
-            self.search(succ, end)
+        else:
+            self.search(succs[0], end)
+
+        self.history.pop(-1)
 
     def extract(self, begin, end):
         self.emulator.run(end=begin)
@@ -51,8 +61,12 @@ class Skye:
         state = self.create_initial_state(begin)
         state.copy(self.emulator)
 
-        for i in range(30):
-            state = state.step()[0]
+        self.found = []
+        self.history = []
+        self.search(state, end)
+
+        for found in self.found:
+            found.show_path()
 
 if __name__ == '__main__':
     from qiling.extensions.mcu.atmel import sam3x8e
