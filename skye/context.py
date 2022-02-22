@@ -90,7 +90,7 @@ class StateWrapper:
             if type(node) is tuple:
                 ins, label, field, value = node
                 if ins.mnemonic == 'str':
-                    print(f'[W] {label}.{field} = {value.args[0]}')
+                    print(f'[W] {label}.{field} = {value}')
                 
                 else:
                     print(f'[R] {label}.{field}')
