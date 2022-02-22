@@ -12,6 +12,7 @@ def make_ql(path):
     ql = Qiling(
         [path],
         archtype="cortex_m", 
+        ostype="mcu",
         env=sam3x8e, 
         verbose=QL_VERBOSE.DEFAULT
     )
@@ -31,51 +32,63 @@ def make_state(proj, address):
         }
     )
 
-def hook_address(proj, address):
+def hook_read_register(proj, address):
     def put_symbol(state):
         sr = claripy.BVS(f'SR#{hex(address)[2:]}', 32)
         state.memory.store(0x400e0668, sr)
     
     proj.hook(address, put_symbol)
 
+def copy_context(state, ql):
+    for reg in ['r0','r1','r2','r3','r4','r5','r6','r7','r8','r9','r10','r11','r12','sp','lr']:
+        setattr(state.regs, reg, getattr(ql.reg, reg))
+
 if __name__ == '__main__':
     entry, target = 0x805c5, 0x805d9
     path = "../examples/rootfs/mcu/sam3x8e/serial.ino.hex"
     
     ql = make_ql(path)
-    ql.run(end=entry)
-    
+
+    history = []
+    def read_cb(perip, offset, size, history):
+        pass
+    def write_cb(perip, offset, size, history):
+        pass
+    ql.hw.pmc.hook_read(read_cb, history)
+    ql.hw.pmc.hook_write(write_cb, history)
     proj = make_angr(path)
+
+    ql.run(end=entry)
     state = make_state(proj, entry)
 
-    hook_address(proj, 0x805e2)
-    hook_address(proj, 0x805ea)
-    hook_address(proj, 0x805fe)
-    hook_address(proj, 0x8060a)
-    hook_address(proj, 0x80616)
-    hook_address(proj, 0x80622)
+    copy_context(state, ql)
+
+    hook_read_register(proj, 0x805e2)
+    hook_read_register(proj, 0x805ea)
+    hook_read_register(proj, 0x805fe)
+    hook_read_register(proj, 0x8060a)
+    hook_read_register(proj, 0x80616)
+    hook_read_register(proj, 0x80622)
+
+    block = proj.factory.block(entry)
+    block.pp
     
     target = 0x8062f
-    simgr = proj.factory.simgr(state)
-    simgr.explore(find=target)
+    # simgr = proj.factory.simgr(state)
+    # simgr.explore(find=target)
 
-    if simgr.found:
-        state = simgr.found[0]
-        state.solver.simplify()
-        for constraint in state.solver.constraints:
-            print(f'\t{constraint}')
-
-    # while True:
-    #     succ = state.step()
-    #     if len(succ.successors) > 1:
-    #         break
-    #     state = succ.successors[0]
-    
-    # for state in succ.successors:
-    #     print(f'{state}:')
+    # for state in simgr.found:
+    #     print(state)
     #     state.solver.simplify()
     #     for constraint in state.solver.constraints:
     #         print(f'\t{constraint}')
+
+    while True:
+        print(state)
+        succ = state.step(num_inst=1)
+        if len(succ.successors) > 1:
+            break
+        state = succ.successors[0]
 
 # [=]     000805d2 [[FLASH]              + 0x0005d2]  1a 6a                         ldr                  r2, [r3, #0x20]
 # [=]     [PMC] [0x805d2] [R] CKGR_MOR = 0x0
