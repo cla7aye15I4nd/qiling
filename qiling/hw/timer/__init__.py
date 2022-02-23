@@ -3,6 +3,7 @@
 # Cross Platform and Multi Architecture Advanced Binary Emulation Framework
 #
 
+from .sam3xa_tc import SAM3xaTc
 from .cm3_systick import CortexM3SysTick
 from .cm4_systick import CortexM4SysTick
 from .stm32f4xx_rtc import STM32F4xxRtc
