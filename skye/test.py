@@ -79,5 +79,64 @@ class SAM3X8Test(unittest.TestCase):
 
         del ql
 
+class STM32F103Test(unittest.TestCase):
+    def test_drone(self):
+        """            
+            Firmware    : Drone
+            MCU         : STM32F103RB
+            Library     : Bare metal
+            Peripherals : TIM1,TIM2,TIM3,TIM4,I2C1,GPIOA,GPIOB,GPIOC,USART1,RCC,FLASH
+            Comment     : Interesting error happened, we need to verify them. (TODO)
+        """
+
+        ql = Qiling(
+            ["../examples/rootfs/mcu/stm32f103/Drone"],
+            archtype="cortex_m", ostype="mcu", env=stm32f103, 
+            verbose=QL_VERBOSE.DEBUG
+        )
+
+        ql.patch(0x80041b2, b'\xbf\x00\xbf\x00')
+        
+        ql.hw.create('rcc')
+        ql.hw.create('flash interface')
+        ql.hw.create('gpioa')
+        ql.hw.create('gpiob')
+        ql.hw.create('gpioc')
+        ql.hw.create('usart1').watch()
+        ql.hw.create('i2c1').watch()
+        ql.hw.create('tim1').watch()
+        ql.hw.create('tim2').watch()
+        ql.hw.create('tim3').watch()
+        ql.hw.create('tim4').watch()
+
+        class MPU9250:
+            address = 0x68 << 1
+            def send(self, data): ...
+            def step(self): ...
+
+        class MAG:
+            address = 0x0c << 1
+            def send(self, data): ...
+            def step(self): ...
+
+        ql.hw.i2c1.connect(MPU9250())
+        ql.hw.i2c1.connect(MAG())
+        
+        ql.run(count=50000)
+        print(ql.hw.usart1.recv().decode())
+
+        del ql
+
+
+    def test_reflow_oven(self):
+        """            
+            Firmware    : Reflow_Oven
+            MCU         : STM32F103RB
+            Library     : Arduino
+            Peripherals : USART2,AFIO,GPIOA,GPIOB,GPIOC,ADC1,RCC,FLASH
+            Comment     :                 
+        """
+        pass
+
 if __name__ == '__main__':
     unittest.main()
