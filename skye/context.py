@@ -50,15 +50,13 @@ class StateWrapper:
                         return [(ins, label, field, value)]
 
                     else: # ins.mnemonic == 'ldr':
-                        sym = self.skye.symbol_manager.new_symbol(label, field,
-                            { 
-                                'path': [_ for _ in self.path] 
-                            }
+                        sym = self.skye.symbol_manager.new_symbol(label, field, 
+                            { 'path': [_ for _ in self.path] }
                         )
-
                         print(f'[{hex(self.state.addr)}] Put symbol "{sym.args[0]}" at {hex(address)}')
-                        print(f'[{hex(self.state.addr)}] Load {label}.{field}')
                         self.state.memory.store(address, sym)
+                        
+                        print(f'[{hex(self.state.addr)}] Load {label}.{field}')                        
                         return [(ins, label, field, 0)]
         
         return []
