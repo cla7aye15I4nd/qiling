@@ -40,6 +40,31 @@ class STM32F103RB(unittest.TestCase):
 
         del ql
 
+    def test_adc(self):
+        ql = Qiling(
+            ['/media/moe/keystone/MCUnitest/stm32f103rb-adc-test/build/stm32f103rb-adc-test.hex'],
+            ostype="mcu", archtype="cortex_m", env=stm32f103
+        )
+
+        ql.hw.load_all()
+        ql.hw.adc1.watch()
+        
+        ql.run(count=10000)
+
+        del ql
+
+    def test_pwm(self):
+        ql = Qiling(
+            ['/media/moe/keystone/MCUnitest/stm32f103rb-pwm-test/build/stm32f103rb-pwm-test.hex'],
+            ostype="mcu", archtype="cortex_m", env=stm32f103,
+        )
+
+        ql.hw.load_all()
+        ql.hw.tim3.watch()
+
+        ql.run(count=10000)
+
+        del ql
 
 if __name__ == '__main__':
     unittest.main()
