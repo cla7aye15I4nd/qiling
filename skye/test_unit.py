@@ -9,16 +9,34 @@ from qiling.extensions.mcu.atmel   import sam3x8e
 from qiling.extensions.mcu.gd32vf1 import gd32vf103
 
 class STM32F103RB(unittest.TestCase):
-    def test_uart_baremetal(self):
+    def test_uart(self):
         ql = Qiling(
             ['/media/moe/keystone/MCUnitest/stm32f103rb-uart-test/build/stm32f103rb-uart-test.hex'],
             ostype="mcu", archtype="cortex_m", env=stm32f103
         )
 
         ql.hw.load_all()
-
+        
+        ql.hw.usart2.send(b'ABC')
         ql.run(count=10000)
+
         print(ql.hw.usart2.recv())
+
+        del ql
+
+    def test_spi(self):
+        ql = Qiling(
+            ['/media/moe/keystone/MCUnitest/stm32f103rb-spi-test/build/stm32f103rb-spi-test.hex'],
+            ostype="mcu", archtype="cortex_m", env=stm32f103
+        )
+
+        ql.hw.load_all()
+        ql.hw.spi1.watch()
+        
+        ql.hw.spi1.send(b'ABC')
+        ql.run(count=10000)
+
+        print(ql.hw.spi1.recv())
 
         del ql
 
