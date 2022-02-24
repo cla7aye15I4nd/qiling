@@ -61,7 +61,7 @@ class QlHwManager:
     def load_all(self):
         for label, args in self.ql.env.items():
             if args['type'] == 'peripheral':
-                self.create(label, args['struct'], args['base'], args.get("kwargs", {}))
+                self.create(label.lower(), args['struct'], args['base'], args.get("kwargs", {}))
 
     def find(self, address: int):
         """ Find the peripheral at `address`
