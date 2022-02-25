@@ -51,13 +51,8 @@ class Skye:
 
         elif len(succs := state.step()) > 1:
             for succ in succs:
-                if succ.addr not in self.history:
+                if self.history.count(succ.addr) <= self.limit:
                     self.search(succ, target, avoid)
-
-            if self.limit > 0 and len(self.history) > self.limit:
-                for succ in succs:
-                    if succ.addr in self.history and succ.addr not in self.history[-self.limit:]:
-                        self.search(succ, target, avoid)
 
         else:
             self.search(succs[0], target, avoid)
@@ -74,11 +69,8 @@ class Skye:
         self.history = []
 
         self.limit = 0
-        self.search(state, target, avoid)
-
-        self.limit = 50
-        while not self.found and self.limit > 0:
+        while not self.found:
             self.search(state, target, avoid)
-            self.limit -= 10
+            self.limit += 1
 
         return self.found

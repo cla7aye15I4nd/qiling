@@ -37,9 +37,9 @@ for testname, test_begin, test_end in testcases:
                 if type(node) is tuple:
                     ins, label, field, value = node
                     if ins.mnemonic.startswith('ldr'):
-                        f.write(f'[R] {label}[{field}]\n')
+                        f.write(f'[{hex(ins.address)}] [R] {label}[{field}]\n')
                     else:
-                        f.write(f'[W] {label}[{field}] = {value}\n')
+                        f.write(f'[{hex(ins.address)}] [W] {label}[{field}] = {value}\n')
                 else:
                     f.write(f'{node}\n')
 
