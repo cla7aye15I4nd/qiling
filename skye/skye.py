@@ -54,12 +54,10 @@ class Skye:
                 if succ.addr not in self.history:
                     self.search(succ, target, avoid)
 
-            if self.limit > 0:
+            if self.limit > 0 and len(self.history) > self.limit:
                 for succ in succs:
-                    if succ.addr in self.history:
-                        if len(self.history) > self.limit and \
-                            succ.addr not in self.history[-self.limit:]:
-                            self.search(succ, target, avoid)
+                    if succ.addr in self.history and succ.addr not in self.history[-self.limit:]:
+                        self.search(succ, target, avoid)
 
         else:
             self.search(succs[0], target, avoid)
