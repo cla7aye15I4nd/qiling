@@ -1,109 +1,45 @@
 import sys
 import lief
-import angr
 
 sys.path.append('..')
-from qiling.core import Qiling
-from context import StateWrapper
-from symbol import SymbolManager
+from qiling.extensions.mcu.stm32f1 import stm32f103
 
-class Skye:
-    def __init__(self, path, env):
-        self.env = env
-        self.path = path
-        
-        self.emulator = self.create_emulator()
-        self.emulator.hw.load_all()
+from skye import Skye
 
-        self.analyzer = self.create_analyzer()
-        self.disassembler = self.emulator.disassembler
+path = '/media/moe/keystone/MCUnitest/stm32f103rb-uart-test/build/stm32f103rb-uart-test'
 
-        self.symbol_manager = SymbolManager()
+elf = lief.parse(path + '.elf')
 
-    def create_emulator(self):
-        return Qiling(
-            [self.path],
-            env      = self.env, 
-            ostype   = "mcu",
-            archtype = "cortex_m",
-        )
+testcases = []
+avoid = []
 
-    def create_analyzer(self):
-        return angr.Project(self.path, arch='ARMCortexM')
+for outer in elf.exported_functions:
+    if outer.name == 'Error_Handler':
+        avoid.append(outer.address)
 
-    def create_initial_state(self, address):
-        return StateWrapper(self, self.analyzer.factory.blank_state(
-            addr=address, 
-            add_options={
-                angr.options.ZERO_FILL_UNCONSTRAINED_MEMORY,
-                angr.options.ZERO_FILL_UNCONSTRAINED_REGISTERS,
-            }
-        ))
+    elif outer.name.endswith('_test_begin'):
 
-    def search(self, state, target, avoid):
-        if state.addr in avoid:
-            return
+        testname = outer.name[: -len('_test_begin')]
+        for inner in elf.exported_functions:
+            if inner.name.endswith('_test_end') and \
+                    inner.name[: -len('_test_end')] == testname:                    
+                testcases.append((testname, outer.address, inner.address))
 
-        self.history.append(state.addr)
-        if state.addr == target:
-            print('[END]')
-            self.found.append(state)
+for testname, test_begin, test_end in testcases:
+    skye = Skye(path + '.hex', stm32f103)
+    found = skye.extract(test_begin, test_end, avoid)
 
-        elif len(succs := state.step()) > 1:
-            for succ in succs:
-                if succ.addr not in self.history:
-                    self.search(succ, target, avoid)
+    with open(f'{testname}_path.log', 'w') as f:
+        f.write(f'[{testname.upper()}]\n')
+        for index, state in enumerate(found):
+            f.write(f'\n[PATH {index + 1}]\n')
+            for node in state.path:
+                if type(node) is tuple:
+                    ins, label, field, value = node
+                    if ins.mnemonic.startswith('ldr'):
+                        f.write(f'[R] {label}[{field}]\n')
+                    else:
+                        f.write(f'[W] {label}[{field}] = {value}\n')
+                else:
+                    f.write(f'{node}\n')
 
-            for succ in succs:
-                if succ.addr in self.history:
-                    limit = 10
-                    if len(self.history) > limit and \
-                        succ.addr not in self.history[-limit:]:
-                        self.search(succ, target, avoid)
-
-        else:
-            self.search(succs[0], target, avoid)
-
-        self.history.pop(-1)
-
-    def extract(self, begin, target, avoid=[]):
-        self.emulator.run(end=begin)
-
-        state = self.create_initial_state(begin)
-        state.copy(self.emulator)
-
-        self.found = []
-        self.history = []
-        self.search(state, target, avoid)
-
-        for found in self.found:
-            found.show_path()
-
-if __name__ == '__main__':
-    from qiling.extensions.mcu.atmel import sam3x8e
-    from qiling.extensions.mcu.stm32f1 import stm32f103
-
-    # skye = Skye('../examples/rootfs/mcu/sam3x8e/serial.ino.hex', sam3x8e)
-    # skye.extract(0x805c5, 0x8062f)
-
-    path = '/media/moe/keystone/MCUnitest/stm32f103rb-uart-test/build/stm32f103rb-uart-test'
-    
-    elf = lief.parse(path + '.elf')
-
-    testcases = []
-    avoid = []
-
-    for outer in elf.exported_functions:
-        if outer.name == 'Error_Handler':
-            avoid.append(outer.address)        
-        if outer.name.endswith('_test_begin'):
-            print(outer)
-            for inner in elf.exported_functions:
-                if inner.name.endswith('_test_end'):                    
-                    if inner.name[: -len('_test_end')] == outer.name[: -len('_test_begin')]:
-                        print(outer, inner)
-                        testcases.append((outer, inner))
-
-    for test_begin, test_end in testcases:
-        skye = Skye(path + '.hex', stm32f103)
-        skye.extract(test_begin.address, test_end.address, avoid)

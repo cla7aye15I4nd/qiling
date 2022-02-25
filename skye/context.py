@@ -27,9 +27,12 @@ class StateWrapper:
             setattr(self.state.regs, reg, getattr(emulator.reg, reg))
 
     def parse(self, ins):
-        if ins.mnemonic in {'ldr', 'str'}:
+        if ins.mnemonic in {'ldr', 'ldrb', 'ldrh', 'str', 'strb', 'strh'}:
             lhs, rhs = ins.op_str.split(',', maxsplit=1)
             
+            while not rhs.endswith(']'):
+                rhs = rhs[:-1]
+                
             rhs = rhs.strip('[ ]')
             reg, offset = rhs, 0
             if '#' in rhs:
@@ -41,10 +44,15 @@ class StateWrapper:
                 hw = self.skye.emulator.hw.find(address)
                 
                 if hw is not None:
-                    label = hw.label
-                    field = hw.field_description(address - hw.base, 4)
+                    label = hw.label.upper()
+                    
+                    if ins.mnemonic.endswith('b'): size = 1
+                    if ins.mnemonic.endswith('h'): size = 2                    
+                    if ins.mnemonic.endswith('r'): size = 4
 
-                    if ins.mnemonic == 'str':
+                    field = hw.field_description(address - hw.base, size)
+
+                    if ins.mnemonic.startswith('str'):
                         value = getattr(self.state.regs, lhs)
                         print(f'[{hex(self.state.addr)}] Store {label}.{field} = {value.args[0]}')
                         return [(ins, label, field, value)]
@@ -53,10 +61,10 @@ class StateWrapper:
                         sym = self.skye.symbol_manager.new_symbol(label, field, 
                             { 'path': [_ for _ in self.path] }
                         )
-                        print(f'[{hex(self.state.addr)}] Put symbol "{sym.args[0]}" at {hex(address)}')
+                        print(f'[{hex(self.state.addr)}] SYMBOL {sym.args[0]} [{hex(address)}]')
                         self.state.memory.store(address, sym)
                         
-                        print(f'[{hex(self.state.addr)}] Load {label}.{field}')                        
+                        print(f'[{hex(self.state.addr)}] LOAD   {label}.{field}')
                         return [(ins, label, field, 0)]
         
         return []
