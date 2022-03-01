@@ -146,7 +146,7 @@ class BranchPredictor_ARM(BranchPredictor):
 
     def predict(self):
         prophecy = Prophecy()
-        cur_addr = self.ql.reg.arch_pc
+        cur_addr = self.ql.arch.regs.arch_pc
         line = disasm(self.ql, cur_addr)
         prophecy.where = cur_addr + line.size
 
@@ -225,7 +225,7 @@ class BranchPredictor_ARM(BranchPredictor):
                 }
 
         if line.mnemonic in jump_table:
-            prophecy.going = jump_table.get(line.mnemonic)(*get_cpsr(self.ql.reg.cpsr))
+            prophecy.going = jump_table.get(line.mnemonic)(*get_cpsr(self.ql.arch.regs.cpsr))
 
         elif line.mnemonic in cb_table:
             prophecy.going = cb_table.get(line.mnemonic)(self.read_reg(line.op_str.split(", ")[0]))
@@ -255,7 +255,7 @@ class BranchPredictor_ARM(BranchPredictor):
                     "ls": lambda V, C, Z, N: (C == 0 or Z == 1),
                     "le": lambda V, C, Z, N: (Z == 1 or N != V),
                     "hi": lambda V, C, Z, N: (Z == 0 and C == 1),
-                    }.get(line.op_str)(*get_cpsr(ql.reg.cpsr))
+                    }.get(line.op_str)(*get_cpsr(ql.arch.regs.cpsr))
 
             it_block_range = [each_char for each_char in line.mnemonic[1:]]
 
@@ -286,7 +286,7 @@ class BranchPredictor_ARM(BranchPredictor):
                     prophecy.where = ql.unpack32(ql.mem.read(self.read_reg(r), self.INST_SIZE))
 
         elif line.mnemonic in ("addls", "addne", "add") and self.regdst_eq_pc(line.op_str):
-            V, C, Z, N = get_cpsr(ql.reg.cpsr)
+            V, C, Z, N = get_cpsr(ql.arch.regs.cpsr)
             r0, r1, r2, *imm = line.op_str.split(", ")
 
             # program counter is awalys 8 bytes ahead when it comes with pc, need to add extra 8 bytes
@@ -336,7 +336,7 @@ class BranchPredictor_ARM(BranchPredictor):
                     "pophi": lambda V, C, Z, N: (C == 1),
                     "popge": lambda V, C, Z, N: (N == V),
                     "poplt": lambda V, C, Z, N: (N != V),
-                    }.get(line.mnemonic)(*get_cpsr(ql.reg.cpsr)):
+                    }.get(line.mnemonic)(*get_cpsr(ql.arch.regs.cpsr)):
 
                 prophecy.where = cur_addr + self.INST_SIZE
 
@@ -365,7 +365,7 @@ class BranchPredictor_MIPS(BranchPredictor):
 
     def predict(self):
         prophecy = Prophecy()
-        cur_addr = self.ql.reg.arch_pc
+        cur_addr = self.ql.arch.regs.arch_pc
         line = disasm(self.ql, cur_addr)
 
         if line.mnemonic == self.CODE_END: # indicates program extied
@@ -420,7 +420,7 @@ class BranchPredictor_X86(BranchPredictor):
 
     def predict(self):
         prophecy = Prophecy()
-        cur_addr = self.ql.reg.arch_pc
+        cur_addr = self.ql.arch.regs.arch_pc
         line = disasm(self.ql, cur_addr)
 
         jump_table = {
@@ -484,11 +484,11 @@ class BranchPredictor_X86(BranchPredictor):
                 }
 
         if line.mnemonic in jump_table:
-            eflags = get_x86_eflags(self.ql.reg.ef).values()
+            eflags = get_x86_eflags(self.ql.arch.regs.ef).values()
             prophecy.going = jump_table.get(line.mnemonic)(*eflags)
 
         elif line.mnemonic in jump_reg_table:
-            prophecy.going = jump_reg_table.get(line.mnemonic)(self.ql.reg.ecx)
+            prophecy.going = jump_reg_table.get(line.mnemonic)(self.ql.arch.regs.ecx)
 
         if prophecy.going:
             takeaway_list = ["ptr", "dword", "[", "]"]
@@ -505,11 +505,11 @@ class BranchPredictor_X86(BranchPredictor):
                     new_line = new_line.replace(each, " ")
 
                 new_line = " ".join(new_line.split())
-                for each_reg in filter(lambda r: len(r) == 3, self.ql.reg.register_mapping.keys()):
+                for each_reg in filter(lambda r: len(r) == 3, self.ql.arch.regs.register_mapping.keys()):
                     if each_reg in new_line:
                         new_line = re.sub(each_reg, hex(self.read_reg(each_reg)), new_line)
                         
-                for each_reg in filter(lambda r: len(r) == 2, self.ql.reg.register_mapping.keys()):
+                for each_reg in filter(lambda r: len(r) == 2, self.ql.arch.regs.register_mapping.keys()):
                     if each_reg in new_line:
                         new_line = re.sub(each_reg, hex(self.read_reg(each_reg)), new_line)
 
@@ -520,7 +520,7 @@ class BranchPredictor_X86(BranchPredictor):
 
                 prophecy.where = eval(new_line)
 
-            elif line.op_str in self.ql.reg.register_mapping:
+            elif line.op_str in self.ql.arch.regs.register_mapping:
                 prophecy.where = getattr(self.ql.reg, line.op_str)
 
             else:

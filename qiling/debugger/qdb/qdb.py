@@ -214,7 +214,7 @@ class QlQdb(cmd.Cmd, QlDebugger):
         """
         internal function for updating registers dump
         """
-        self._saved_reg_dump = dict(filter(lambda d: isinstance(d[0], str), self.ql.reg.save().items()))
+        self._saved_reg_dump = dict(filter(lambda d: isinstance(d[0], str), self.ql.arch.regs.save().items()))
 
     def do_step_in(self: QlQdb, *args) -> Optional[bool]:
         """

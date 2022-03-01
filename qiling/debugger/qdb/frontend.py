@@ -185,7 +185,7 @@ class CtxManager(object):
             trace_line = f"0x{insn.address:08x} │ {opcode:10s} {insn.mnemonic:10} {insn.op_str:35s}"
 
         cursor = " "
-        if self.ql.reg.arch_pc == insn.address:
+        if self.ql.arch.regs.arch_pc == insn.address:
             cursor = "►"
 
         jump_sign = " "
@@ -204,7 +204,7 @@ class CtxManager(object):
     def context_stack(self):
 
         for idx in range(10):
-            addr = self.ql.reg.arch_sp + idx * self.ql.pointersize
+            addr = self.ql.arch.regs.arch_sp + idx * self.ql.pointersize
             if (val := _try_read(self.ql, addr, self.ql.pointersize)[0]):
                 print(f"$sp+0x{idx*self.ql.pointersize:02x}│ [0x{addr:08x}] —▸ 0x{self.ql.unpack(val):08x}", end="")
 
@@ -230,7 +230,7 @@ class CtxManager(object):
     def context_asm(self):
         # assembly before current location
         past_list = []
-        cur_addr = self.ql.reg.arch_pc
+        cur_addr = self.ql.arch.regs.arch_pc
 
         line = disasm(self.ql, cur_addr-0x10)
 
@@ -336,7 +336,7 @@ class CtxManager_ARM(CtxManager):
             lines += line
 
         print(lines.format(*cur_regs.values()))
-        print(color.GREEN, "[{cpsr[mode]} mode], Thumb: {cpsr[thumb]}, FIQ: {cpsr[fiq]}, IRQ: {cpsr[irq]}, NEG: {cpsr[neg]}, ZERO: {cpsr[zero]}, Carry: {cpsr[carry]}, Overflow: {cpsr[overflow]}".format(cpsr=self.get_flags(self.ql.reg.cpsr)), color.END, sep="")
+        print(color.GREEN, "[{cpsr[mode]} mode], Thumb: {cpsr[thumb]}, FIQ: {cpsr[fiq]}, IRQ: {cpsr[irq]}, NEG: {cpsr[neg]}, ZERO: {cpsr[zero]}, Carry: {cpsr[carry]}, Overflow: {cpsr[overflow]}".format(cpsr=self.get_flags(self.ql.arch.regs.cpsr)), color.END, sep="")
 
 
 class CtxManager_MIPS(CtxManager):
@@ -417,12 +417,12 @@ class CtxManager_X86(CtxManager):
             lines += line
 
         print(lines.format(*cur_regs.values()))
-        print(color.GREEN, "EFLAGS: [CF: {flags[CF]}, PF: {flags[PF]}, AF: {flags[AF]}, ZF: {flags[ZF]}, SF: {flags[SF]}, OF: {flags[OF]}]".format(flags=get_x86_eflags(self.ql.reg.ef)), color.END, sep="")
+        print(color.GREEN, "EFLAGS: [CF: {flags[CF]}, PF: {flags[PF]}, AF: {flags[AF]}, ZF: {flags[ZF]}, SF: {flags[SF]}, OF: {flags[OF]}]".format(flags=get_x86_eflags(self.ql.arch.regs.ef)), color.END, sep="")
 
     @context_printer("[ DISASM ]", footer=True)
     def context_asm(self):
         past_list = []
-        cur_addr = self.ql.reg.arch_pc
+        cur_addr = self.ql.arch.regs.arch_pc
 
         cur_insn = disasm(self.ql, cur_addr)
         prophecy = self.predictor.predict()
@@ -494,7 +494,7 @@ class CtxManager_CORTEX_M(CtxManager):
             lines += line
 
         print(lines.format(cur_regs.values()))
-        print(color.GREEN, "[{cpsr[mode]} mode], Thumb: {cpsr[thumb]}, FIQ: {cpsr[fiq]}, IRQ: {cpsr[irq]}, NEG: {cpsr[neg]}, ZERO: {cpsr[zero]}, Carry: {cpsr[carry]}, Overflow: {cpsr[overflow]}".format(cpsr=get_arm_flags(self.ql.reg.cpsr)), color.END, sep="")
+        print(color.GREEN, "[{cpsr[mode]} mode], Thumb: {cpsr[thumb]}, FIQ: {cpsr[fiq]}, IRQ: {cpsr[irq]}, NEG: {cpsr[neg]}, ZERO: {cpsr[zero]}, Carry: {cpsr[carry]}, Overflow: {cpsr[overflow]}".format(cpsr=get_arm_flags(self.ql.arch.regs.cpsr)), color.END, sep="")
 
 
 if __name__ == "__main__":
