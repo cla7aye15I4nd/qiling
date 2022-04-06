@@ -17,6 +17,8 @@ from qiling.arch.register import QlRegisterManager
 from qiling.arch.cortex_m_const import IRQ, EXC_RETURN, CONTROL, EXCP
 from qiling.const import QL_ARCH, QL_ENDIAN, QL_VERBOSE
 from qiling.exception import QlErrorNotImplemented
+from qiling.extensions.multitask import MultiTaskUnicorn, UnicornTask
+
 
 class QlInterruptContext(ContextDecorator):
     def __init__(self, ql: Qiling):
@@ -68,7 +70,7 @@ class QlArchCORTEX_M(QlArchARM):
 
     @cached_property
     def uc(self):
-        return Uc(UC_ARCH_ARM, UC_MODE_ARM + UC_MODE_MCLASS + UC_MODE_THUMB)
+        return MultiTaskUnicorn(UC_ARCH_ARM, UC_MODE_ARM + UC_MODE_MCLASS + UC_MODE_THUMB, 10)
 
     @cached_property
     def regs(self) -> QlRegisterManager:

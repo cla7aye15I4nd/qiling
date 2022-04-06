@@ -3,9 +3,29 @@
 # Cross Platform and Multi Architecture Advanced Binary Emulation Framework
 #
 
+from unicorn import UcError, UC_ERR_OK
+
 from qiling.os.os import QlOs
 from qiling.arch.arm import QlArchARM
+from qiling.extensions.multitask import MultiTaskUnicorn, UnicornTask
 
+
+class QlOsMcuThread(UnicornTask):
+    def __init__(self, ql: "Qiling", begin: int, end: int, task_id=None):
+        super().__init__(ql.uc, begin, end, task_id)
+        self.ql = ql
+    
+    def on_start(self):
+        return None
+    
+    def on_interrupted(self, ucerr: int):
+        self._begin = self.pc
+
+        # And don't restore anything.
+        if ucerr != UC_ERR_OK:
+            raise UcError(ucerr)
+
+        self.ql.hw.step()
 
 class QlOsMcu(QlOs):
     def __init__(self, ql):
@@ -23,18 +43,6 @@ class QlOsMcu(QlOs):
         count = self.ql.count or 0
         end = self.ql.exit_point or -1
 
-        while self.runable:
-            current_address = self.ql.arch.regs.arch_pc
-            if isinstance(self.ql.arch, QlArchARM):
-                current_address |= int(self.ql.arch.is_thumb)
-
-            if current_address == end:
-                break
-            
-            self.ql.emu_start(current_address, 0, count=1)
-            self.ql.hw.step()
-
-            count -= 1
-            
-            if count == 0:
-                break
+        utk = QlOsMcuThread(self.ql, self.ql.arch.effective_pc, end)
+        self.ql.uc.task_create(utk)
+        self.ql.uc.tasks_start(count=count)
